@@ -129,7 +129,6 @@
 				})
 			},
 			confirmSubmit(){
-				console.log(this.obj)
 				let obj = this.obj;
 				let myreg = /^1[3456789]\d{9}$/;
 				if(!obj.petName || obj.petName == ''){
