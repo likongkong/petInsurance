@@ -14,16 +14,15 @@
 					宠物信息
 				</view>
 				<view class="petInfoWrap">
-					<listForm :list="petListData"></listForm>
-					
+					<listFormView :list="petListData" v-on:bindchange="bindchange" v-on:smsSend="smsSend"></listFormView>
 				</view>
 				<view class="title">
 					主人信息
 				</view>
 				<view class="userInfoWrap">
-					<listForm :list="userListData"></listForm>
+					<listFormView :list="userListData" v-on:bindchange="bindchange" v-on:smsSend="smsSend" ref="getPhoneCode"></listFormView>
 				</view>
-				<view class="confirmBtn">
+				<view class="confirmBtn" @click="confirmSubmit">
 					下一步
 				</view>
 			</view>
@@ -35,7 +34,9 @@
 </template>
 
 <script>
-	import listForm from "../components/listForm/listForm";
+	import listFormView from "../components/listFormView/listFormView";
+	import {petCreate,smsSend} from '../../utils/api.js'
+	var util = require('../../utils/util.js')
 	export default {
 		data() {
 			return {
@@ -44,55 +45,132 @@
 					{
 						subheading:'请输入宠物的名字',
 						placeholder:'请输入宠物的名字',
-						value:'大黄狗',
-						type:'text'
+						value:'',
+						type:'text',
+						name:'petName'
 					},
 					{
 						subheading:'请选择宠物性别',
 						current:0,
 						radioList:[
-							{name:'王子',id:0,index:0},
-							{name:'公主',id:1,index:1},
+							{name:'王子',id:1,index:0},
+							{name:'公主',id:2,index:1},
 						],
-						type:'radio'
+						type:'radio',
+						name:'petSex'
 					},
 					{
 						subheading:'请选择宠物种类',
 						current:0,
 						radioList:[
-							{name:'汪星',id:0,index:0},
-							{name:'喵星',id:1,index:1},
+							{name:'汪星',id:10,index:0},
+							{name:'喵星',id:20,index:1},
 						],
-						type:'radio'
+						type:'radio',
+						name:'petKind'
 					},
 				],
 				userListData:[
 					{
 						subheading:'请输入您的真实姓名',
 						placeholder:'请输入您的真实姓名',
-						value:'嗷嗷嗷',
-						type:'text'
+						value:'',
+						type:'text',
+						name:'userName'
 					},
 					{
 						subheading:'请输入您的手机号',
 						placeholder:'请输入您的手机号',
-						value:'1131111122222',
-						type:'phoneCode'
+						value:'',
+						type:'phoneCode',
+						name:'userPhone'
 					},
 					{
 						subheading:'请输入手机验证码',
 						placeholder:'请输入手机验证码',
-						value:'0123',
-						type:'text'
+						value:'',
+						type:'text',
+						name:'userCode'
 					},
-				]
+				],
+				obj:{}
 			}
 		},
 		components:{
-			listForm
+			listFormView
+		},
+		onLoad(option) {
+			console.log(option)
 		},
 		methods: {
-			
+			bindchange(e){
+				let key=e.name;
+				this.obj[key]=e.value;
+				console.log(this.obj)
+			},
+			smsSend(){
+				let obj = this.obj;
+				let myreg = /^1[3456789]\d{9}$/;
+				if(!obj.userPhone || obj.userPhone == ''){
+					util.showToast('请输入您的手机号',2000);
+					return false;
+				}else if(!myreg.test(obj.userPhone)){
+					util.showToast('手机号码有误请重新填写',2000);
+					return false;
+				}
+				this.$refs.getPhoneCode.getPhoneCode();
+				let data = {};
+				data.phone = obj.userPhone;
+				smsSend(data).then(res => {
+					
+				}).catch(err => {
+					util.showToast(err,1500);
+					console.log(err)
+				})
+			},
+			confirmSubmit(){
+				console.log(this.obj)
+				let obj = this.obj;
+				let myreg = /^1[3456789]\d{9}$/;
+				if(!obj.petName || obj.petName == ''){
+					util.showToast('请输入宠物名字',2000);
+					return false;
+				}
+				if(!obj.petSex){
+					obj.petSex=1
+				}
+				if(!obj.petKind){
+					obj.petKind=10
+				}
+				if(!obj.userName || obj.userName == ''){
+					util.showToast('请输入您的真实姓名',2000);
+					return false;
+				}
+				if(!obj.userPhone || obj.userPhone == ''){
+					util.showToast('请输入您的手机号',2000);
+					return false;
+				}else if(!myreg.test(obj.userPhone)){
+					util.showToast('手机号码有误请重新填写',2000);
+					return false;
+				}
+				if(!obj.userCode || obj.userCode == ''){
+					util.showToast('请输入手机验证码',2000);
+					return false;
+				}
+				let data={};
+				data.customer_real_name = obj.userName;
+				data.customer_phone = obj.userPhone;
+				data.sms_code = obj.userCode;
+				data.pet_name = obj.petName;
+				data.pet_sex = obj.petSex;
+				data.species_family_id = obj.petKind;
+				petCreate(data).then(res => {
+					console.log(res)
+				}).catch(err => {
+					util.showToast(err,1500);
+					console.log(err)
+				})
+			}
 		}
 	}
 </script>
@@ -160,53 +238,13 @@
 	.formWrap{
 		margin-top: 30rpx;
 	}
-	
 	.infoTitle{
 		font-size: 26rpx;
 		color: #686864;
 		line-height: 37rpx
 	}
-	.inputWrap input{
-		width: 100%;
-		height: 90rpx;
-		border-bottom: 1rpx solid #E4E4E4;
-		font-size: 30rpx;
-		font-weight: 600;
-		color: #4D4637;
-		line-height: 96rpx;
-	}
-	.petInfoRadioWrap{
-		width: 100%;
-		border-radius: 10rpx;
-		background: #F2F2F2;
-		font-weight: 600;
-		color: #4D4637;
-		display: flex;
-		justify-content: space-between;
-		margin-top: 30rpx;
-		overflow: hidden;
-	}
-	.petInfoRadioWrap text{
-		width: 50%;
-		text-align: center;
-		height: 60rpx;
-		line-height: 60rpx;
-		display: block;
-		font-size: 26rpx;
-	}
 	.usePhoneWrap{
 		position: relative;
-	}
-	.getPhoneCode{
-		width: 204rpx;
-		height: 70rpx;
-		position: absolute;
-		bottom: 19rpx;
-		right: 20rpx;
-		background: #FDD000;
-		border-radius: 4rpx;
-		text-align: center;
-		line-height: 70rpx;
 	}
 	.confirmBtn{
 		width: 433rpx;
